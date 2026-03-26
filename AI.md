@@ -835,39 +835,8 @@ print(response.content)
 
 #### Langchain
 
-##### 库
-
-> #专门用于将句子、文本或图像转换为高维的向量表示（通常称为 Embeddings，即嵌入）。
->
-> ```python
-> from sentence_transformers import SentenceTransformer
-> # 1. 加载预训练模型 (例如支持中文的 Multilingual 模型)
-> #程序会先去你电脑的默认缓存目录（通常在 Windows 的 C:\Users\用户名\.cache\torch\sentence_transformers）找有没有这个文件夹。如果本地没有，它会自动连接到 Hugging Face 的服务器，下载这个预训练模型的所有权重文件和配置文件。
-> #如果你已经手动下载好了模型，或者在没有网络的环境下运行，你可以将它改为绝对路径
-> model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
-> 
-> sentences = ['这个相机拍出来的照片很清晰', '这款手机的摄影效果非常棒']
-> 
-> # 2. 将句子转换为向量
-> embeddings = model.encode(sentences)
-> ```
-
-```py
-# 分割
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-#专门用于将句子、文本或图像转换为高维的向量表示（通常称为 Embeddings，即嵌入）。
-from sentence_transformers import SentenceTransformer
-#是一个用于将**文本转换为向量（Embeddings）**的工具。
-from langchain_huggingface import HuggingFaceEmbeddings
-#加载文档
-from langchain_community.document_loaders import TextLoader
-#Chroma向量数据库
-from langchain_chroma import Chroma
-# opai模型
-from langchain_openai import ChatOpenAI
-# 结构化对话：它可以让你轻松定义“系统提示词（System Message）”、“用户输入（User Message）”和“AI 回复（AI Message）”。参数化：你可以定义占位符（例如 {topic}），在程序运行时再动态填入内容。
-from langchain_core.prompts import ChatPromptTemplate
-```
+- LLM（大语言模型）,文本输入，文本输出。一次对话
+- Chat Model（聊天模型） 多次对话
 
 ##### 词分割
 
@@ -882,6 +851,57 @@ texts = text_splitter.split_text(aa)
 
 print(texts) 
 ```
+
+##### 提示词模板
+
+```python
+from langchain_core.prompts import (
+    ChatPromptTemplate,
+    SystemMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+)
+
+system_message = SystemMessagePromptTemplate.from_template("You are a {role}.")
+human_message = HumanMessagePromptTemplate.from_template("What is {topic}?")
+
+messages = ChatPromptTemplate.from_messages(
+    [
+        system_message,
+        human_message,
+    ]
+).format_messages(role="helpful assistant", topic="Python")
+```
+
+```python
+#少量提示词模板
+from langchain_core.prompts import PromptTemplate, FewShotPromptTemplate
+
+# 1. 定义示例集
+examples = [
+    {"input": "破釜沉舟", "output": "不给自己留退路，像极了还没写完代码就敢点上线按钮的我。"},
+    {"input": "守株待兔", "output": "拒绝主动加班，坐在工位上等产品经理自己取消需求。"}
+]
+
+# 2. 配置示例的格式化方式
+example_prompt = PromptTemplate(
+    input_variables=["input", "output"],
+    template="词语: {input}\n释义: {output}"
+)
+
+# 3. 创建 FewShotPromptTemplate
+dynamic_prompt = FewShotPromptTemplate(
+    examples=examples,
+    example_prompt=example_prompt,
+    prefix="请仿照以下风格，为给出的词语提供幽默的解释：", # 提示词前缀
+    suffix="词语: {user_input}\n释义:",             # 提示词后缀
+    input_variables=["user_input"]
+)
+
+# 生成最终的 Prompt
+print(dynamic_prompt.format(user_input="卧薪尝胆"))
+```
+
+
 
 ##### 向量嵌入
 
@@ -899,6 +919,21 @@ embeddings = HuggingFaceEmbeddings(
     model_kwargs=model_kwargs,
     encode_kwargs=encode_kwargs
 )
+
+texts = ["你好，世界！", "今天天气不错。"]
+
+query = "今天天气怎么样？"
+
+# 2. 生成文本的向量表示 
+vectors = embeddings.embed_documents(texts)
+
+# 3. 生成查询的向量表示
+query_vector = embeddings.embed_query(query)
+
+
+print(vectors)
+
+print(query_vector)
 ```
 
 ##### 创建检索工具
@@ -922,14 +957,34 @@ tools = [retriever_tool]
 ##### LLM
 
 ```python
+from langchain_core.prompts import (
+    ChatPromptTemplate,
+    SystemMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+)
 from langchain_openai import ChatOpenAI
+
 llm = ChatOpenAI(
-    api_key="sk-geminixxxxx",
-    base_url="http://localhost:8000/v1",
-    model="gemini-3.0-flash",
+    api_key="d0191e8ead8f4222a7b1ce6a3c672a08.ItyT4WFsRYWKBWBn",
+    base_url="https://open.bigmodel.cn/api/paas/v4",
+    model="glm-4.7-flash",
     temperature=0.9,
     max_tokens=2048,
 )
+
+system_message = SystemMessagePromptTemplate.from_template("You are a {role}.")
+human_message = HumanMessagePromptTemplate.from_template("What is {topic}?")
+
+messages = ChatPromptTemplate.from_messages(
+    [
+        system_message,
+        human_message,
+    ]
+).format_messages(role="helpful assistant", topic="Python")
+
+response = llm.invoke(messages)
+
+print(response.content)
 
 ```
 
