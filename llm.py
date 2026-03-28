@@ -1,7 +1,7 @@
 from langchain_core.prompts import (
     ChatPromptTemplate,
-    SystemMessagePromptTemplate,
     HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
 )
 from langchain_openai import ChatOpenAI
 
@@ -10,7 +10,6 @@ llm = ChatOpenAI(
     base_url="https://open.bigmodel.cn/api/paas/v4",
     model="glm-4.7-flash",
     temperature=0.9,
-    max_tokens=2048,
 )
 
 system_message = SystemMessagePromptTemplate.from_template("You are a {role}.")
