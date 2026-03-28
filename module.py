@@ -5,7 +5,7 @@ from langchain_core.prompts import (
 )
 from langchain_openai import ChatOpenAI
 
-llm = ChatOpenAI(
+module = ChatOpenAI(
     api_key="d0191e8ead8f4222a7b1ce6a3c672a08.ItyT4WFsRYWKBWBn",
     base_url="https://open.bigmodel.cn/api/paas/v4",
     model="glm-4.7-flash",
@@ -22,6 +22,6 @@ messages = ChatPromptTemplate.from_messages(
     ]
 ).format_messages(role="helpful assistant", topic="Python")
 
-response = llm.invoke(messages)
+response = module.invoke(messages)
 
 print(response.content)
