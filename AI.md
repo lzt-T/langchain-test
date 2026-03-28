@@ -128,6 +128,25 @@ import re
 
 ```
 
+#### 一键安装依赖
+
+```python
+pip install pipreqs
+# pipreqs 只会扫描项目代码，导出项目实际引用到的第三方库。
+```
+
+```python
+pipreqs ./ --encoding=utf-8 --force
+#执行后，它会分析当前文件夹下的所有 .py 文件，并在根目录下生成一个 requirements.txt 文件。
+```
+
+```python
+pip install -r requirements.txt
+#告诉 pip 从指定的文件中读取列表进行安装
+```
+
+
+
 #### 基本使用
 
 ##### 包使用
