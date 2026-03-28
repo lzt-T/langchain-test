@@ -1051,7 +1051,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_openai import ChatOpenAI
 
-module = ChatOpenAI(
+model = ChatOpenAI(
     api_key="sk-geminixxxxx",
     base_url="http://localhost:8000/v1",
     model="gemini-3.0-flash",
@@ -1093,7 +1093,7 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-chain = prompt | module
+chain = prompt | model
 
 # 调用语言模型生成答案
 response = chain.invoke({"context": context, "input": input})
