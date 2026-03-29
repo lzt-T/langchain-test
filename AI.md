@@ -128,6 +128,23 @@ import re
 
 ```
 
+#### 命令规范
+
+- 文件、文件夹、变量、函数命令都使用多个单词使用 `snake_case`（蛇形命名法）
+
+| **文件名**        | **用途说明**                                                 |
+| ----------------- | ------------------------------------------------------------ |
+| **`__init__.py`** | 标志该目录是一个 Python 包（Package）。                      |
+| **`__main__.py`** | 当你把整个文件夹作为模块运行时（`python -m folder_name`），会自动执行该文件。 |
+
+> `__init__.py`
+>
+> **通俗理解：** “准生证”或“标志牌”。
+>
+> **作用：** 只要文件夹里有这个文件，Python 就会认为这个文件夹是一个“包（Package）”，从而允许你使用 `import folder_name.module` 的方式来调用里面的代码。
+>
+> **内容：** 它通常是**空文件**。但如果你在里面写了代码，那么当你 `import` 这个包时，里面的代码会自动运行。
+
 #### 一键安装依赖
 
 ```python
@@ -144,8 +161,6 @@ pipreqs ./ --encoding=utf-8 --force
 pip install -r requirements.txt
 #告诉 pip 从指定的文件中读取列表进行安装
 ```
-
-
 
 #### 基本使用
 
@@ -380,6 +395,31 @@ class Student(Person):
         super().__init__(name, age)
         self.school = school
 ```
+
+##### Lambda
+
+###### 基本语法
+
+lambda 函数的结构非常紧凑，只能包含一个表达式：
+$$
+lambda \text{ 参数1, 参数2, ...} : \text{表达式}
+$$
+
+
+- **关键字**：必须以 `lambda` 开头。
+- **参数**：可以有多个，也可以没有，参数之间用逗号隔开。
+- **冒号**：分隔参数和表达式。
+- **表达式**：这是函数的核心逻辑。它会自动返回计算结果，**不需要写 `return`**。
+
+###### 使用示例
+
+```python
+# 计算两个数的和
+add = lambda x, y: x + y
+print(add(5, 3))  # 输出: 8
+```
+
+
 
 ##### 输出
 
@@ -925,36 +965,149 @@ print(response.content)
 
 ```
 
-##### LCEL
+##### 搜索工具
+
+```python
+import os
+
+from dotenv import find_dotenv, load_dotenv
+from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
+from langchain_openai import ChatOpenAI
+
+load_dotenv(find_dotenv())
+
+model = ChatOpenAI(
+    api_key="sk-geminixxxxx",
+    base_url="http://localhost:8000/v1",
+    model="gemini-3.0-flash",
+    temperature=0.9,
+)
+
+# 初始化搜索封装器
+search_wrapper = TavilySearchAPIWrapper(tavily_api_key=os.getenv("TAVILY_KEY"))
+
+# 创建搜索工具 必须显式传入 api_wrapper
+search_tool = TavilySearchResults(api_wrapper=search_wrapper, k=3)
+
+tools = [search_tool]
+
+chain = model.bind_tools(tools)
+
+result = chain.invoke("今天多少度")
+print(result)
+
+```
+
+##### LCEL（链）
 
 LCEL 的灵魂是 unix 风格的管道符 `|`。它将一个组件的**输出**自动作为下一个组件的**输入**
+
+要想配合chain使用要实现`runnable`方法
 
 ```python
 chain = prompt | model | parser
 ```
 
-##### 创建agent
+###### runnable
+
+只要一个组件符合 `Runnable` 协议，它就能通过管道符 `|` 与其他组件无缝连接。
+
+几乎所有的 LangChain 内置组件（如 `ChatOpenAI`, `PromptTemplate`, `StrOutputParser`）都是 `Runnable`。
+
+它的强大之处在于提供了一套**统一的调用标准**：
+
+- **`invoke()`**: 单个输入 ，单个输出。
+- **`stream()`**: 实时流式返回（打字机效果）。
+- **`batch()`**: 批量处理列表中的多个输入。
+- **`ainvoke()` / `astream()`**: 对应的异步版本，非常适合在 Windows 上构建响应式桌面应用或 Web 服务。
+
+###### 创建runnable
+
+- 基本
 
 ```python
-from langchain_openai import ChatOpenAI
-from langchain import hub
-from langchain.agents import AgentExecutor, create_openai_functions_agent
+from langchain_core.runnables import chain
 
-model = ChatOpenAI(model="gpt-4", temperature=0)
+@chain
+def my_custom_step(input_text: str):
+    # 你的自定义逻辑，比如在 Windows 路径下查找文件
+    return f"处理后的结果: {input_text.upper()}"
 
-# 获取预设的 Prompt 模板
-prompt = hub.pull("hwchase17/openai-functions-agent")
-
-# 构建 Agent
-agent = create_openai_functions_agent(model, tools, prompt)
-
-# 运行器  verbose详情
-agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-
-# 测试查询
-response = agent_executor.invoke({"input": "公司的年假规定是什么？"})
-print(response["output"])
+# 现在它可以像积木一样使用了
+full_chain = prompt | model | my_custom_step
 ```
+
+- 如果你不想使用装饰器，可以用 `RunnableLambda` 将任何 Python 函数转换为 `Runnable`。
+
+```python
+from langchain_core.runnables import RunnableLambda
+
+def transform_data(x):
+    return {"topic": x["text"][:10]} # 截取前10个字符
+
+runnable_step = RunnableLambda(transform_data)
+```
+
+- 示例
+
+```python
+from langchain_core.prompts import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
+)
+from langchain_core.runnables import chain
+from langchain_openai import ChatOpenAI
+
+model = ChatOpenAI(
+    api_key="sk-geminixxxxx",
+    base_url="http://localhost:8000/v1",
+    model="gemini-3.0-flash",
+    temperature=0.1,  # 降低温度以获得更稳定的 JSON 输出
+)
+
+
+@chain
+def my_custom_step(input_text: str):
+    # 你的自定义逻辑，比如在 Windows 路径下查找文件
+    return f"处理后的结果: {input_text}"
+
+
+prompt = ChatPromptTemplate.from_messages(
+    [
+        SystemMessagePromptTemplate.from_template("You are a helpful assistant."),
+        HumanMessagePromptTemplate.from_template("{input}"),
+    ]
+)
+
+chain = prompt | model | my_custom_step
+
+result = chain.invoke({"input": "你是谁"})
+print(result)
+
+```
+
+###### 并行执行
+
+```python
+from langchain_core.runnables import RunnableParallel
+
+# 并行运行两个分支
+parallel_chain = RunnableParallel(
+    joke=prompt_joke | model,
+    poem=prompt_poem | model
+)
+
+result = parallel_chain.invoke({"topic": "人工智能"})
+# 结果会是一个字典：{"joke": "...", "poem": "..."}
+```
+
+###### 其他类型的链
+
+- 数学链
+- SQL链
+- ......
 
 ##### 输出解释器
 
@@ -1145,6 +1298,65 @@ tools = [retriever_tool]
 # 创建 Agent
 # 它会自动处理：判断是否需要工具 -> 执行工具 -> 获取结果 -> 回答用户
 #agent_executor = create_react_agent(llm, tools)
+```
+
+##### 创建agent
+
+```python
+from langchain.agents import create_agent
+from langchain_openai import ChatOpenAI
+
+model = ChatOpenAI(
+    api_key="sk-geminixxxxx",
+    base_url="http://localhost:8000/v1",
+    model="gemini-3.0-flash",
+    temperature=0.9,
+)
+
+
+agent = create_agent(
+    model=model,
+    tools=[],  # 没有工具就传空列表
+    system_prompt="你是一个助手。",
+)
+
+result = agent.invoke({"messages": [{"role": "user", "content": "1*2等于几"}]})
+
+print(result["messages"][-1].content)
+
+```
+
+##### tools创建和使用
+
+```python
+from langchain.agents import create_agent
+from langchain_core.tools import tool
+from langchain_openai import ChatOpenAI
+
+model = ChatOpenAI(
+    api_key="sk-geminixxxxx",
+    base_url="http://localhost:8000/v1",
+    model="gemini-3.0-flash",
+    temperature=0.9,
+)
+
+
+@tool
+def multiply(a: int, b: int) -> int:
+    """将两个整数相乘。"""
+    return a * b
+
+
+agent = create_agent(
+    model=model,
+    tools=[multiply],
+    system_prompt="你是一个助手，涉及计算时优先调用工具。",
+)
+
+result = agent.invoke({"messages": [{"role": "user", "content": "1*2等于几"}]})
+
+print(result["messages"][-1].content)
+
 ```
 
 
