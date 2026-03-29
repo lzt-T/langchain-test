@@ -4,11 +4,12 @@ from dotenv import find_dotenv, load_dotenv
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 from langchain_openai import ChatOpenAI
+from pydantic import SecretStr
 
 load_dotenv(find_dotenv())
 
 model = ChatOpenAI(
-    api_key="sk-geminixxxxx",
+    api_key=SecretStr("sk-geminixxxxx"),
     base_url="http://localhost:8000/v1",
     model="gemini-3.0-flash",
     temperature=0.9,

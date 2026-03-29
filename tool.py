@@ -1,9 +1,10 @@
 from langchain.agents import create_agent
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
+from pydantic import SecretStr
 
 model = ChatOpenAI(
-    api_key="sk-geminixxxxx",
+    api_key=SecretStr("sk-geminixxxxx"),
     base_url="http://localhost:8000/v1",
     model="gemini-3.0-flash",
     temperature=0.9,
@@ -13,7 +14,7 @@ model = ChatOpenAI(
 # 创建工具
 @tool
 def multiply(a: int, b: int) -> int:
-    """将两个整数相乘。"""
+    """将两个整数相乘。"""  # 这个是必须的，工具的描述
     return a * b
 
 

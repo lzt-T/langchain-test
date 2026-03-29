@@ -4,9 +4,10 @@ from langchain_core.prompts import (
     SystemMessagePromptTemplate,
 )
 from langchain_openai import ChatOpenAI
+from pydantic import SecretStr
 
 model = ChatOpenAI(
-    api_key="d0191e8ead8f4222a7b1ce6a3c672a08.ItyT4WFsRYWKBWBn",
+    api_key=SecretStr("d0191e8ead8f4222a7b1ce6a3c672a08.ItyT4WFsRYWKBWBn"),
     base_url="https://open.bigmodel.cn/api/paas/v4",
     model="glm-4.7-flash",
     temperature=0.9,

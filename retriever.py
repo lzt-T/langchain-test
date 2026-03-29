@@ -4,9 +4,10 @@ from langchain_chroma import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_openai import ChatOpenAI
+from pydantic import SecretStr
 
 model = ChatOpenAI(
-    api_key="sk-geminixxxxx",
+    api_key=SecretStr("sk-geminixxxxx"),
     base_url="http://localhost:8000/v1",
     model="gemini-3.0-flash",
     temperature=0.9,

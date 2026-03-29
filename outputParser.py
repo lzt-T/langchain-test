@@ -3,7 +3,7 @@ from typing import List
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
 
 
 # 1. 定义期望的输出结构
@@ -14,7 +14,7 @@ class CalculationResult(BaseModel):
 
 # 2. 初始化模型
 model = ChatOpenAI(
-    api_key="sk-geminixxxxx",
+    api_key=SecretStr("sk-geminixxxxx"),
     base_url="http://localhost:8000/v1",
     model="gemini-3.0-flash",
     temperature=0.1,  # 降低温度以获得更稳定的 JSON 输出
