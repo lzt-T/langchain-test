@@ -1417,7 +1417,9 @@ print(response.content)
 
 ###### 高级RAG
 
-- 摘要检索
+**前索引**
+
+- 摘要检索（MultiVectorRetriever）
 
   > 1. 先对原文档做摘要（每篇或每个大块）。
   > 2. 把“摘要文本”做 embedding 存进向量库。
@@ -1425,7 +1427,7 @@ print(response.content)
   > 4. 通过 metadata（如 doc_id）回查原文或原始 chunks。
   > 5. 再把原文上下文喂给 LLM 回答。
 
-- 父子索引
+- 父子索引（ParentDocumentRetriever）
 
   > 1. 把原始长文档当作“父文档”（parent）。
   > 2. 把父文档切成更小块当“子文档”（child），只把子文档做向量索引。
@@ -1438,7 +1440,7 @@ print(response.content)
   > - 子块小，向量检索更准；
   > - 返回父块大，上下文更完整，不容易“只看到一句话”。
 
-- 假设性问题索引
+- 假设性问题索引（MultiVectorRetriever）
 
   > 1. 先让 LLM 为每段文档生成若干“用户可能会问的问题”（假设性问题）。
   > 2. 把这些问题向量化并建立索引（而不只索引原文）。
@@ -1448,7 +1450,7 @@ print(response.content)
   >
   > 不常使用
 
-- 元数据索
+- 元数据索（SelfQueryRetriever）
 
   > 当你把文档（Document）存入向量数据库（如 Chroma, Pinecone, Milvus 等）时，通常包含两部分：
   >
@@ -1465,12 +1467,18 @@ print(response.content)
   >
   >   **执行检索**：数据库先过滤掉不符合条件的文档，再在剩下的文档中做向量相似度计算。
 
-- 混合检索
+- 混合检索（EnsembleRetriever，BM25Retriever）
 
   > 的“混合检索（Hybrid Retrieval）”一般是把两类检索结合起来：
   >
   > 1. 稀疏检索（关键词/BM25，擅长精确词匹配）
   > 2. 稠密检索（向量相似度，擅长语义匹配）
+
+- 查询优化（MultiQueryRetriever）
+
+  > 把用户一个问题先让 llm 改写成多个查询，再用你传入的 retriever 分别检索，最后合并结果，提升召回率（尤其适合用户提问表述不稳定时）。
+
+**后索引**
 
 #### LangGraph
 
